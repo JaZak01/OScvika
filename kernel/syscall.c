@@ -6,6 +6,9 @@
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
+#include "stat.h"
+
+
 
 // Fetch the uint64 at addr from the current process.
 int
@@ -101,6 +104,7 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+extern uint64 sys_symlink(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,6 +130,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_symlink]   sys_symlink,
 };
 
 void
@@ -145,3 +150,34 @@ syscall(void)
     p->trapframe->a0 = -1;
   }
 }
+/*
+uint64
+sys_symlink(void)
+{
+  char target[MAXPATH];
+  char path[MAXPATH];
+  struct inode *ip;
+  int n;
+
+  if((n = argstr(0, target, MAXPATH)) < 0 || argstr(1, path, MAXPATH) < 0)
+    return -1;
+
+  begin_op();
+
+  // create a new symlink, return with a locked inode
+  ip = create(path, T_SYMLINK, 0, 0);
+  if(ip == 0){
+      end_op();
+      return -1;
+  }
+
+  // write the target into the symlink's data block
+  if(writei(ip, 0, (uint64)target, 0, n) != n) {
+    end_op();
+    return -1;
+  }
+
+  iunlockput(ip);
+  end_op();
+  return 0;
+}*/
